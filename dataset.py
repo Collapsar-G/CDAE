@@ -24,6 +24,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from miscc.config import cfg
 
+
 def getdata_ml1m(filepath, sep='::', header='infer'):
     """
 
@@ -50,7 +51,6 @@ class ml_Dataset(Dataset):
         self.data = data
 
     def __getitem__(self, idx):
-
         purchase_vec = torch.tensor(self.data[idx], dtype=torch.float)
 
         uid = torch.tensor([idx, ], dtype=torch.long)
@@ -61,6 +61,3 @@ class ml_Dataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-
-
-

@@ -20,6 +20,7 @@
 import numpy as np
 import torch
 
+
 def data2matrix(data, num_user=1, num_item=1):
     data_matrix = np.zeros(shape=(num_user, num_item))
     for u in data.keys():
@@ -28,5 +29,5 @@ def data2matrix(data, num_user=1, num_item=1):
     data_matrix = torch.tensor(data_matrix)
     return data_matrix
 
-def save_model(model, path):
-    return
+
+

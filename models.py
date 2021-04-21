@@ -37,6 +37,15 @@ class CDAE(nn.Module):
         self.hidden2out = nn.Linear(self.num_hidden, self.num_item)
         self.sigmoid = nn.Sigmoid()
 
+    def regularization(self, lam):
+        loss = torch.tensor(0.).cuda()
+        temp = torch.tensor(0.).cuda()
+        for name, parameters in self.named_parameters():
+            temp = torch.norm(parameters).pow(2)
+        loss += temp
+        loss = loss / 2 * lam
+        return loss
+
     def forward(self, uid, purchase_vec):
         # print(uid,purchase_vec)
         hidden = self.sigmoid(self.id2hidden(uid).squeeze(dim=1) + self.item2hidden(purchase_vec))

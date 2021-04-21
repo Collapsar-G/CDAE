@@ -15,7 +15,11 @@
 
 @Desc    :   训练入口
 
-
+:ToDo:
+    1.损失函数添加正则项；
+    2.修改测试函数；
+    3.添加命令行参数；
+    4.修改学习率的更新方式；
 """
 import os
 
@@ -70,7 +74,7 @@ def test(model, test_data, train_matrix, top_k=5):
         input_data = input_data.cuda()
         uids = uids.cuda()
     out = model(uids, input_data)
-    out = (out - 999 * input_data).detach().numpy()
+    out = (out - 999 * input_data).cpu().detach().numpy()
     precisions = 0
     recalls = 0
     hits = 0
@@ -100,8 +104,8 @@ def plot_precision(epoche_list, precision_list):
 
 
 if __name__ == "__main__":
+    starttime = datetime.datetime.now()
     dataset = "ml_1m"
-
     now = datetime.datetime.now(dateutil.tz.tzlocal())
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
     output_dir = './output/%s_%s' % \
@@ -151,6 +155,7 @@ if __name__ == "__main__":
 
             out = model(uid, purchase_vec) * mask_vec
             loss += torch.sum((out - purchase_vec).square()) / mask_vec.sum()
+            loss += model.regularization(config.lam)
         opt.zero_grad()
         loss.backward()
         opt.step()
@@ -162,20 +167,32 @@ if __name__ == "__main__":
                                                                                             'param_groups'][
                                                                                             0]['lr'])
             with open(output_dir + "/terminal.txt", 'a') as f:
-                f.write(str+' \n')
-                f.write('-' * 55 +' \n')
+                f.write(str + ' \n')
+                f.write('-' * 55 + ' \n')
             print(str)
             print('-' * 55)
-        if epoch + 1 % 100 == 0:
+        if (epoch % 100 == 0) & (epoch != 0):
             print('=' * 55)
             print('*' * 55)
             print('=' * 55)
-            torch.save(model.state_dict(), output_dir + "/models_%d.pth" % (epoch + 1))
-            print("模型已存储至:%s" % (output_dir + "/models_%d.pth" % (epoch + 1)))
+            torch.save(model.state_dict(), output_dir + "/models_%d.pth" % (epoch))
+            print("模型已存储至:%s" % (output_dir + "/models_%d.pth" % epoch))
             print('-' * 55)
-    #         print("开始测试")
-    #         precision, _ = test(model, test_data, train_matrix, top_k=config.top_n)
-    #         epoche_list.append(epoch + 1)
-    #         precision_list.append(precision)
-    #         print("测试完成，继续训练")
-    # plot_precision(epoche_list, precision_list)
+            print("开始测试")
+            st = datetime.datetime.now()
+            precision, _ = test(model, test_data, train_matrix, top_k=config.top_n)
+            et = datetime.datetime.now()
+            ti = (et - st).seconds
+            print("测试完成，用时：", ti)
+            epoche_list.append(epoch + 1)
+            precision_list.append(precision)
+            str = '| epoch {:3d} /{:5d}  | precision {:5.7f} |'.format(epoch, config.epochs, precision)
+            print(str)
+            with open(output_dir + "/terminal.txt", 'a') as f:
+                f.write(str + ' \n')
+                f.write('-' * 55 + ' \n')
+            print("测试完成，继续训练")
+    endtime = datetime.datetime.now()
+    time_all = (endtime - starttime).seconds
+    print("训练完成，用时：", time_all)
+    plot_precision(epoche_list, precision_list)
